@@ -1,0 +1,97 @@
+services:
+  # HRM SaaS Backend API Service
+  - type: web
+    name: hrm-saas-backend
+    env: node
+    plan: free  # or "starter" for Pro tier
+    buildCommand: cd backend && npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DB_HOST
+        fromService:
+          type: envVarGroup
+          name: postgres-env
+          property: host
+      - key: DB_PORT
+        fromService:
+          type: envVarGroup
+          name: postgres-env
+          property: port
+      - key: DB_NAME
+        fromService:
+          type: envVarGroup
+          name: postgres-env
+          property: database
+      - key: DB_USER
+        fromService:
+          type: envVarGroup
+          name: postgres-env
+          property: user
+      - key: DB_PASSWORD
+        fromService:
+          type: envVarGroup
+          name: postgres-env
+          property: password
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: "15m"
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: "7d"
+      - key: FRONTEND_URL
+        value: https://your-frontend.vercel.app
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend.vercel.app
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"
+      - key: BASE_DOMAIN
+        value: vercel.app
+      - key: TENANT_SUBDOMAIN_REGEX
+        value: "^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$"
+      - key: SUPABASE_URL
+        value: https://your-project.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: your-supabase-anon-key
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: your-supabase-service-role-key
+      - key: ADMIN_EMAIL
+        value: admin@yourdomain.com
+    disk:
+      name: hrm-saas-backend-disk
+      mountPath: /data
+      sizeGB: 1
+
+  # PostgreSQL Database Service
+  - type: pserv
+    name: hrm-saas-postgres
+    plan: free  # or "starter" for Pro tier
+    version: "15"
+    envVars:
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: hrm_saas
+    disk:
+      name: hrm-saas-postgres-disk
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+  # Redis Cache Service (Optional - for future scaling)
+  - type: redis
+    name: hrm-saas-redis
+    plan: free  # or "starter" for Pro tier
+    maxmemoryPolicy: allkeys-lru
+    version: "7"
